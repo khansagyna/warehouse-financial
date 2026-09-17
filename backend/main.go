@@ -1,8 +1,7 @@
 package main
 
 import (
-	"fmt"
-	"net/http"
+	"log"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -16,35 +15,39 @@ func main() {
 	// =========================
 	// DATABASE
 	// =========================
+
 	db, err := database.Connect()
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
-	fmt.Println("Database connected successfully:", db != nil)
+	// =========================
+	// AUTO MIGRATION
+	// =========================
 
-	// =========================
-	// DATABASE MIGRATION
-	// =========================
 	err = db.AutoMigrate(
 		&models.Category{},
 		&models.Product{},
+		&models.Inventory{},
+		&models.StockMovement{},
 	)
 
 	if err != nil {
-		panic(err)
+		log.Fatal("Failed to migrate database:", err)
 	}
 
-	fmt.Println("Database migration successful")
+	log.Println("Database migration completed")
 
 	// =========================
-	// ROUTER
+	// GIN ROUTER
 	// =========================
+
 	router := gin.Default()
 
 	// =========================
 	// CORS
 	// =========================
+
 	router.Use(cors.New(cors.Config{
 		AllowOrigins: []string{
 			"http://localhost:5173",
@@ -62,12 +65,12 @@ func main() {
 			"Content-Type",
 			"Accept",
 		},
-		AllowCredentials: true,
 	}))
 
 	// =========================
 	// CONTROLLERS
 	// =========================
+
 	categoryController := controllers.CategoryController{
 		DB: db,
 	}
@@ -76,85 +79,114 @@ func main() {
 		DB: db,
 	}
 
-	// =========================
-	// CATEGORY ROUTES
-	// =========================
+	inventoryController := controllers.InventoryController{
+		DB: db,
+	}
 
-	// Get all categories
-	router.GET(
-		"/api/categories",
-		categoryController.GetCategories,
-	)
-
-	// Create category
-	router.POST(
-		"/api/categories",
-		categoryController.CreateCategory,
-	)
-
-	// Update category
-	router.PUT(
-		"/api/categories/:id",
-		categoryController.UpdateCategory,
-	)
-
-	// Delete category
-	router.DELETE(
-		"/api/categories/:id",
-		categoryController.DeleteCategory,
-	)
-
-	// =========================
-	// PRODUCT ROUTES
-	// =========================
-
-	// Get all products
-	router.GET(
-		"/api/products",
-		productController.GetProducts,
-	)
-
-	// Get product by ID
-	router.GET(
-		"/api/products/:id",
-		productController.GetProduct,
-	)
-
-	// Create product
-	router.POST(
-		"/api/products",
-		productController.CreateProduct,
-	)
-
-	// Update product
-	router.PUT(
-		"/api/products/:id",
-		productController.UpdateProduct,
-	)
-
-	// Delete product
-	router.DELETE(
-		"/api/products/:id",
-		productController.DeleteProduct,
-	)
+	stockMovementController := controllers.StockMovementController{
+		DB: db,
+	}
 
 	// =========================
 	// HEALTH CHECK
 	// =========================
-	router.GET("/api/health", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"status":  "ok",
+
+	router.GET("/", func(c *gin.Context) {
+		c.JSON(200, gin.H{
 			"message": "Warehouse Financial API is running",
 		})
 	})
 
 	// =========================
-	// RUN SERVER
+	// API ROUTES
 	// =========================
-	fmt.Println("Server running on http://localhost:8080")
 
-	err = router.Run(":8080")
-	if err != nil {
-		panic(err)
+	api := router.Group("/api")
+	{
+		// =========================
+		// CATEGORY
+		// =========================
+
+		api.GET(
+			"/categories",
+			categoryController.GetCategories,
+		)
+
+		api.POST(
+			"/categories",
+			categoryController.CreateCategory,
+		)
+
+		api.PUT(
+			"/categories/:id",
+			categoryController.UpdateCategory,
+		)
+
+		api.DELETE(
+			"/categories/:id",
+			categoryController.DeleteCategory,
+		)
+
+		// =========================
+		// PRODUCT
+		// =========================
+
+		api.GET(
+			"/products",
+			productController.GetProducts,
+		)
+
+		api.GET(
+			"/products/:id",
+			productController.GetProduct,
+		)
+
+		api.POST(
+			"/products",
+			productController.CreateProduct,
+		)
+
+		api.PUT(
+			"/products/:id",
+			productController.UpdateProduct,
+		)
+
+		api.DELETE(
+			"/products/:id",
+			productController.DeleteProduct,
+		)
+
+		// =========================
+		// INVENTORY
+		// =========================
+
+		api.GET(
+			"/inventories",
+			inventoryController.GetInventories,
+		)
+
+		// =========================
+		// STOCK MOVEMENT
+		// =========================
+
+		api.GET(
+			"/stock-movements",
+			stockMovementController.GetStockMovements,
+		)
+
+		api.POST(
+			"/stock-movements",
+			stockMovementController.CreateStockMovement,
+		)
+	}
+
+	// =========================
+	// START SERVER
+	// =========================
+
+	log.Println("Server running on http://localhost:8080")
+
+	if err := router.Run(":8080"); err != nil {
+		log.Fatal("Failed to start server:", err)
 	}
 }
