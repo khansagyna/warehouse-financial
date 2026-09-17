@@ -5,16 +5,15 @@ import Sidebar from "./components/Sidebar"
 import Dashboard from "./pages/Dashboard"
 import Categories from "./pages/Categories"
 import Products from "./pages/Products"
+import Inventory from "./pages/Inventory"
+import StockMovements from "./pages/StockMovements"
 import Suppliers from "./pages/Suppliers"
 import Customers from "./pages/Customers"
 import Purchases from "./pages/Purchases"
 import Sales from "./pages/Sales"
 import Reports from "./pages/Reports"
 
-import {
-  getCategories,
-  getProducts,
-} from "./services/api"
+import { getCategories, getProducts } from "./services/api"
 
 function App() {
   const [activePage, setActivePage] = useState("dashboard")
@@ -25,10 +24,7 @@ function App() {
   useEffect(() => {
     const loadDashboardData = async () => {
       try {
-        const [
-          categoriesData,
-          productsData,
-        ] = await Promise.all([
+        const [categoriesData, productsData] = await Promise.all([
           getCategories(),
           getProducts(),
         ])
@@ -58,6 +54,12 @@ function App() {
 
       case "categories":
         return <Categories />
+
+      case "inventory":
+        return <Inventory />
+
+      case "stock-movements":
+        return <StockMovements />
 
       case "suppliers":
         return <Suppliers />

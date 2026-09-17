@@ -13,6 +13,14 @@ function Sidebar({ activePage, setActivePage }) {
       key: "categories",
     },
     {
+      name: "Inventory",
+      key: "inventory",
+    },
+    {
+      name: "Stock Movement",
+      key: "stock-movements",
+    },
+    {
       name: "Suppliers",
       key: "suppliers",
     },
@@ -36,7 +44,7 @@ function Sidebar({ activePage, setActivePage }) {
 
   return (
     <aside className="flex min-h-screen w-64 shrink-0 flex-col border-r border-slate-200 bg-white p-5">
-      
+
       {/* Logo / Brand */}
       <div className="mb-8">
         <h1 className="text-xl font-bold text-slate-800">

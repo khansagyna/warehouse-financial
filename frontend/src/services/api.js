@@ -1,71 +1,98 @@
 const API_URL = "http://localhost:8080/api"
 
 const request = async (endpoint, options = {}) => {
-  const response = await fetch(`${API_URL}${endpoint}`, {
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers,
-    },
-    ...options,
-  })
+  try {
+    const response = await fetch(`${API_URL}${endpoint}`, {
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        ...options.headers,
+      },
+    })
 
-  const data = await response.json()
+    let data = null
 
-  if (!response.ok) {
-    throw new Error(data.message || "Something went wrong")
+    try {
+      data = await response.json()
+    } catch {
+      // Response tidak memiliki JSON
+    }
+
+    if (!response.ok) {
+      throw new Error(
+        data?.message || `Request failed with status ${response.status}`
+      )
+    }
+
+    return data
+  } catch (error) {
+    console.error(`API Error [${endpoint}]:`, error)
+    throw error
   }
-
-  return data
 }
 
-export const getCategories = () => {
-  return request("/categories")
-}
+// CATEGORY
 
-export const createCategory = (data) => {
-  return request("/categories", {
+export const getCategories = () =>
+  request("/categories")
+
+export const getCategory = (id) =>
+  request(`/categories/${id}`)
+
+export const createCategory = (data) =>
+  request("/categories", {
     method: "POST",
     body: JSON.stringify(data),
   })
-}
 
-export const updateCategory = (id, data) => {
-  return request(`/categories/${id}`, {
+export const updateCategory = (id, data) =>
+  request(`/categories/${id}`, {
     method: "PUT",
     body: JSON.stringify(data),
   })
-}
 
-export const deleteCategory = (id) => {
-  return request(`/categories/${id}`, {
+export const deleteCategory = (id) =>
+  request(`/categories/${id}`, {
     method: "DELETE",
   })
-}
 
-export const getProducts = () => {
-  return request("/products")
-}
+// PRODUCT
 
-export const getProduct = (id) => {
-  return request(`/products/${id}`)
-}
+export const getProducts = () =>
+  request("/products")
 
-export const createProduct = (data) => {
-  return request("/products", {
+export const getProduct = (id) =>
+  request(`/products/${id}`)
+
+export const createProduct = (data) =>
+  request("/products", {
     method: "POST",
     body: JSON.stringify(data),
   })
-}
 
-export const updateProduct = (id, data) => {
-  return request(`/products/${id}`, {
+export const updateProduct = (id, data) =>
+  request(`/products/${id}`, {
     method: "PUT",
     body: JSON.stringify(data),
   })
-}
 
-export const deleteProduct = (id) => {
-  return request(`/products/${id}`, {
+export const deleteProduct = (id) =>
+  request(`/products/${id}`, {
     method: "DELETE",
   })
-}
+
+// INVENTORY
+
+export const getInventories = () =>
+  request("/inventories")
+
+// STOCK MOVEMENT
+
+export const getStockMovements = () =>
+  request("/stock-movements")
+
+export const createStockMovement = (data) =>
+  request("/stock-movements", {
+    method: "POST",
+    body: JSON.stringify(data),
+  })
