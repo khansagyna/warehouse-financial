@@ -13,7 +13,9 @@ import (
 )
 
 func main() {
-	// Connect ke database
+	// =========================
+	// DATABASE
+	// =========================
 	db, err := database.Connect()
 	if err != nil {
 		panic(err)
@@ -21,37 +23,124 @@ func main() {
 
 	fmt.Println("Database connected successfully:", db != nil)
 
-	// Migration
-	err = db.AutoMigrate(&models.Category{})
+	// =========================
+	// DATABASE MIGRATION
+	// =========================
+	err = db.AutoMigrate(
+		&models.Category{},
+		&models.Product{},
+	)
+
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Println("Category table migrated successfully")
+	fmt.Println("Database migration successful")
 
-	// Router
+	// =========================
+	// ROUTER
+	// =========================
 	router := gin.Default()
 
-	// Izinkan frontend React mengakses backend
+	// =========================
+	// CORS
+	// =========================
 	router.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:5173", "http://localhost:5174"},
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Accept"},
+		AllowOrigins: []string{
+			"http://localhost:5173",
+			"http://localhost:5174",
+		},
+		AllowMethods: []string{
+			"GET",
+			"POST",
+			"PUT",
+			"DELETE",
+			"OPTIONS",
+		},
+		AllowHeaders: []string{
+			"Origin",
+			"Content-Type",
+			"Accept",
+		},
 		AllowCredentials: true,
 	}))
 
-	// Controller
+	// =========================
+	// CONTROLLERS
+	// =========================
 	categoryController := controllers.CategoryController{
 		DB: db,
 	}
 
-	// Category routes
-	router.GET("/api/categories", categoryController.GetCategories)
-	router.POST("/api/categories", categoryController.CreateCategory)
-	router.PUT("/api/categories/:id", categoryController.UpdateCategory)
-	router.DELETE("/api/categories/:id", categoryController.DeleteCategory)
+	productController := controllers.ProductController{
+		DB: db,
+	}
 
-	// Health check
+	// =========================
+	// CATEGORY ROUTES
+	// =========================
+
+	// Get all categories
+	router.GET(
+		"/api/categories",
+		categoryController.GetCategories,
+	)
+
+	// Create category
+	router.POST(
+		"/api/categories",
+		categoryController.CreateCategory,
+	)
+
+	// Update category
+	router.PUT(
+		"/api/categories/:id",
+		categoryController.UpdateCategory,
+	)
+
+	// Delete category
+	router.DELETE(
+		"/api/categories/:id",
+		categoryController.DeleteCategory,
+	)
+
+	// =========================
+	// PRODUCT ROUTES
+	// =========================
+
+	// Get all products
+	router.GET(
+		"/api/products",
+		productController.GetProducts,
+	)
+
+	// Get product by ID
+	router.GET(
+		"/api/products/:id",
+		productController.GetProduct,
+	)
+
+	// Create product
+	router.POST(
+		"/api/products",
+		productController.CreateProduct,
+	)
+
+	// Update product
+	router.PUT(
+		"/api/products/:id",
+		productController.UpdateProduct,
+	)
+
+	// Delete product
+	router.DELETE(
+		"/api/products/:id",
+		productController.DeleteProduct,
+	)
+
+	// =========================
+	// HEALTH CHECK
+	// =========================
 	router.GET("/api/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"status":  "ok",
@@ -59,8 +148,13 @@ func main() {
 		})
 	})
 
-	// Run server
+	// =========================
+	// RUN SERVER
+	// =========================
 	fmt.Println("Server running on http://localhost:8080")
 
-	router.Run(":8080")
+	err = router.Run(":8080")
+	if err != nil {
+		panic(err)
+	}
 }
